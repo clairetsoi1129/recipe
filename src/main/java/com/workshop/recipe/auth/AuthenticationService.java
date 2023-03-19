@@ -1,10 +1,13 @@
 package com.workshop.recipe.auth;
 
 import com.workshop.recipe.config.JwtTokenUtil;
+import com.workshop.recipe.token.Token;
+import com.workshop.recipe.token.TokenRepository;
+import com.workshop.recipe.token.TokenType;
 import com.workshop.recipe.user.Role;
 import com.workshop.recipe.user.UserAccount;
 import com.workshop.recipe.user.UserAccountRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -12,13 +15,18 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
 public class AuthenticationService {
-    private final UserAccountRepository userAccountRepository;
-    private final PasswordEncoder passwordEncoder;
+    @Autowired
+    private UserAccountRepository userAccountRepository;
+    @Autowired
+    private TokenRepository tokenRepository;
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
-    private final JwtTokenUtil jwtService;
-    private final AuthenticationManager authenticationManager;
+    @Autowired
+    private JwtTokenUtil jwtTokenUtil;
+    @Autowired
+    private AuthenticationManager authenticationManager;
 
     public AuthenticationResponse register(RegisterRequest req) {
         var user = UserAccount.builder()
@@ -29,14 +37,8 @@ public class AuthenticationService {
                 .role(Role.REGISTERED_USER)
                 .build();
         var savedUser = userAccountRepository.save(user);
-        var jwtToken = jwtService.generateToken(user);
-//        var token = Token.builder()
-//                .userAccount(savedUser)
-//                .token(jwtToken)
-//                .tokenType(TokenType.BEARER)
-//                .isExpired(false)
-//                .isRevoked(false)
-//                .build();
+        var jwtToken = jwtTokenUtil.generateToken(user);
+        saveUserToken(savedUser, jwtToken);
 
         return AuthenticationResponse.builder()
                 .token(jwtToken)
@@ -53,10 +55,34 @@ public class AuthenticationService {
         var user = userAccountRepository.findByEmail(req.getEmail())
                 .orElseThrow(()->new UsernameNotFoundException("User email not found"));
 
-        var jwtToken = jwtService.generateToken(user);
+        var jwtToken = jwtTokenUtil.generateToken(user);
+        revokeAllUserToken(user);
+        saveUserToken(user, jwtToken);
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();
 
+    }
+
+    private void revokeAllUserToken(UserAccount user){
+        var validUserTokens = tokenRepository.findAllValidTokensByUser(user.getId());
+        if (validUserTokens.isEmpty())
+            return;
+        validUserTokens.forEach(t->{
+            t.setExpired(true);
+            t.setRevoked(true);
+        });
+        tokenRepository.saveAll(validUserTokens);
+    }
+
+    private void saveUserToken(UserAccount user, String jwtToken) {
+        var token = Token.builder()
+                .userAccount(user)
+                .token(jwtToken)
+                .tokenType(TokenType.BEARER)
+                .expired(false)
+                .revoked(false)
+                .build();
+        tokenRepository.save(token);
     }
 }

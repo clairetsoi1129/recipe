@@ -1,5 +1,6 @@
 package com.workshop.recipe.config;
 
+import com.workshop.recipe.token.TokenRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,6 +18,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
 
+import static com.workshop.recipe.config.Constant.AUTHORIZATION;
+import static com.workshop.recipe.config.Constant.BEARER;
+
 @Component
 @Slf4j
 public class JwtRequestFilter extends OncePerRequestFilter {
@@ -25,8 +29,8 @@ public class JwtRequestFilter extends OncePerRequestFilter {
     @Autowired
     private UserDetailsService userDetailsService;
 
-    private final String AUTHORIZATION = "Authorization";
-    private final String BEARER = "Bearer ";
+    @Autowired
+    private TokenRepository tokenRepository;
 
     @Override
     protected void doFilterInternal(
@@ -43,8 +47,12 @@ public class JwtRequestFilter extends OncePerRequestFilter {
         jwt = authHeader.substring(BEARER.length());
         userEmail = jwtTokenUtil.extractUsername(jwt);
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+            var isTokenValid = tokenRepository.findByToken(jwt)
+                    .map(t -> !t.isExpired() && !t.isRevoked())
+                    .orElse(false);
+
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);
-            if (jwtTokenUtil.isTokenValid(jwt, userDetails)) {
+            if (jwtTokenUtil.isTokenValid(jwt, userDetails) && isTokenValid) {
                 UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(
                         userDetails,
                         null,
