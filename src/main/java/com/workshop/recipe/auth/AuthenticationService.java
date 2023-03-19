@@ -1,6 +1,6 @@
 package com.workshop.recipe.auth;
 
-import com.workshop.recipe.config.JwtService;
+import com.workshop.recipe.config.JwtTokenUtil;
 import com.workshop.recipe.user.Role;
 import com.workshop.recipe.user.UserAccount;
 import com.workshop.recipe.user.UserAccountRepository;
@@ -17,7 +17,7 @@ public class AuthenticationService {
     private final UserAccountRepository userAccountRepository;
     private final PasswordEncoder passwordEncoder;
 
-    private final JwtService jwtService;
+    private final JwtTokenUtil jwtService;
     private final AuthenticationManager authenticationManager;
 
     public AuthenticationResponse register(RegisterRequest req) {
@@ -28,8 +28,16 @@ public class AuthenticationService {
                 .password(passwordEncoder.encode(req.getPassword()))
                 .role(Role.REGISTERED_USER)
                 .build();
-        userAccountRepository.save(user);
+        var savedUser = userAccountRepository.save(user);
         var jwtToken = jwtService.generateToken(user);
+//        var token = Token.builder()
+//                .userAccount(savedUser)
+//                .token(jwtToken)
+//                .tokenType(TokenType.BEARER)
+//                .isExpired(false)
+//                .isRevoked(false)
+//                .build();
+
         return AuthenticationResponse.builder()
                 .token(jwtToken)
                 .build();

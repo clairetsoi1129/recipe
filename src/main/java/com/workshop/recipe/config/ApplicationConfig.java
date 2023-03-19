@@ -1,7 +1,7 @@
 package com.workshop.recipe.config;
 
 import com.workshop.recipe.user.UserAccountRepository;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,13 +14,14 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 @Configuration
-@RequiredArgsConstructor
 public class ApplicationConfig {
-    private final UserAccountRepository userAccountRepository;
+    @Autowired
+    private UserAccountRepository userAccountRepository;
 
 
     @Bean
     public UserDetailsService userDetailsService(){
+        // loadUserByUsername implementation
         return username -> userAccountRepository.findByEmail(username)
                 .orElseThrow(() -> new UsernameNotFoundException("User not found."));
     }
