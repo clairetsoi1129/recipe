@@ -29,7 +29,7 @@ public class AuthenticationServiceTests {
     private TokenRepository mockTokenRepository;
 
     @InjectMocks
-    private AuthenticationService authenticationService;
+    private AuthenticationServiceImpl authenticationService;
 
     @Mock
     private AuthenticationManager authenticationManager;

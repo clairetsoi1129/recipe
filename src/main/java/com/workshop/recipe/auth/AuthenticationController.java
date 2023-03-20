@@ -11,17 +11,17 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/v1/auth")
 public class AuthenticationController {
     @Autowired
-    private AuthenticationService service;
+    private AuthenticationService authenticationService;
 
     @PostMapping("/register")
     public ResponseEntity<AuthenticationResponse> register(@RequestBody RegisterRequest req){
-        return ResponseEntity.ok(service.register(req));
+        return ResponseEntity.ok(authenticationService.register(req));
 
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthenticationResponse> register(@RequestBody AuthenticationRequest req){
-        return ResponseEntity.ok(service.authenticate(req));
+    public ResponseEntity<AuthenticationResponse> login(@RequestBody AuthenticationRequest req){
+        return ResponseEntity.ok(authenticationService.authenticate(req));
 
     }
 

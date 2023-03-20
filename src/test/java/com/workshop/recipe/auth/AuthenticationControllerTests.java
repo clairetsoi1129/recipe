@@ -21,7 +21,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest
 public class AuthenticationControllerTests {
     @Mock
-    private AuthenticationService mockAuthenticationService;
+    private AuthenticationServiceImpl mockAuthenticationService;
 
     @InjectMocks
     private AuthenticationController authenticationController;
